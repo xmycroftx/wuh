@@ -36,7 +36,8 @@ Example usage:
 
 The above statement will show a list of any windows updates available to download from the update catalog
 
-> wuh show-updated 
+> wuh show-updated
+ 
 This shows a list of the "current" patches on the system, does not show history -- only "isInstalled" items.
 ## Installs/Downloads need to be run in the Administrator context
 
