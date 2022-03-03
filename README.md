@@ -51,6 +51,13 @@ This will download, then install all security and cumulative updates.
 
 This downloads and installs only updates with the word "Security" in the title.
 
+### Example scheduled task in powershell
+The following task would check for security updates every day, and installs it as soon as it identifies one.
+
+> $action = New-ScheduledTaskAction -Execute 'wuh.exe' -Argument 'install —download —security-only'
+> $trigger =  New-ScheduledTaskTrigger -Daily -At 9am
+> Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "AppLog" -Description "Daily security updates"
+
 ### Todo:
 > add --enable-all option that enumerates and installs all updates found
 >  
