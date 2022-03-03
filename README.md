@@ -9,10 +9,13 @@ WUH is a command line utility for installing windows updates, and interacts dire
 > 
 > install
 use the install action to install any available Security updates
+
 > show-available
 The show-available action lists any updates that are ready to download or install
+
 > show-updated
 Using the show-updated action, we can see the isInstalled list for the user.
+
 > options:
 
 >--download
