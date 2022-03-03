@@ -1,0 +1,42 @@
+on:
+  push:
+    branches:
+      - master
+        tags:
+          - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+      # Install the .NET Core workload
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '3.1'
+    - name: Setup MSBuild.exe
+      uses: microsoft/setup-msbuild@v1
+    - name: Navigate to Workspace
+      run: cd $GITHUB_WORKSPACE
+    - name: Create Build Directory
+      run: mkdir _build
+    - name: Restore Packages
+      run: nuget restore WUH.sln
+    - name: Build Solution
+      run: |
+        msbuild.exe WUH.sln /nologo /nr:false /p:DeployOnBuild=true /p:DeployDefaultTarget=WebPublish /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:platform="Any CPU" /p:configuration="Release" /p:PublishUrl="../_build"
+    - name: Upload artifact
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: WUHbins
+        path: "./wuh/bin/Release/"
+    - name: Archive Release
+      uses: thedoctor0/zip-release@master
+      with:
+        type: 'zip'
+        filename: 'release.zip'
+        exclusions: '*.git* /*node_modules/* .editorconfig'
