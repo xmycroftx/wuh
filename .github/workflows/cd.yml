@@ -42,3 +42,8 @@ jobs:
         filename: 'WUHBins.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
         directory: ./wuh/bin/Release/
+        - name: Upload Release
+      uses: ncipollo/release-action@v1
+      with:
+        artifacts: "WUHBins.zip"
+        token: ${{ secrets.GITHUB_TOKEN }}
