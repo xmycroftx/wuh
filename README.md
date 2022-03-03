@@ -25,6 +25,8 @@ The above statement will show a list of any windows updates available to downloa
 
 > wuh show-updated 
 
+## Installs/Downloads need to be run in the Administrator context
+
 This shows a list of the "current" patches on the system, does not show history -- only "isInstalled" items.
 
 > wuh install --download --enable-cumulative 
