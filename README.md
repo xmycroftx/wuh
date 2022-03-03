@@ -53,8 +53,12 @@ This downloads and installs only updates with the word "Security" in the title.
 
 ### Todo:
 > add --enable-all option that enumerates and installs all updates found
+>  
 > add --kb=kbnumber option that allows for selecting only a specific KB for installation
+>  
 > add --isInstalled=kbnumber to verify only a specific KB is installed
+>  
 > add --optional-only option that specifically installs optional updates
+>  
 > add --reboot option that will automatically reboot if any applied update has RebootRequired set to true.
 
