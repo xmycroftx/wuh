@@ -58,7 +58,7 @@ The following task would check for security updates every day, and installs it a
 
 > $trigger =  New-ScheduledTaskTrigger -Daily -At 9am
 
-> Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "AppLog" -Description "Daily security updates"
+> Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "SecurityUpdates" -Description "Daily security updates"
 
 ### Todo:
 > add --enable-all option that enumerates and installs all updates found
