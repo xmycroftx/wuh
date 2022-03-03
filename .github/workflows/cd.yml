@@ -40,6 +40,7 @@ jobs:
         type: 'zip'
         filename: 'WUHBins.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
+        path: './wuh/bin/Release/'
     - name: Upload Release
       uses: ncipollo/release-action@v1
       with:
