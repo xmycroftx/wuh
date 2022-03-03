@@ -6,16 +6,16 @@ WUH is a command line utility for installing windows updates, and interacts dire
 > usage: wuh.exe [install\|\|show-available\|\|show-updated\|\|help] [options]
 > 
 > options:
-> 
-> --download
-> 
-> --enable-hidden
-> 
-> --enable-previews
-> 
-> --enable-cumulative
-> 
-> --security-only
+
+>--download
+
+>--enable-hidden
+
+>--enable-previews
+
+>--enable-cumulative
+
+>--security-only
 
 
 
