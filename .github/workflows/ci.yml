@@ -41,6 +41,6 @@ jobs:
     - name: wuh tests
       run: |
         cd wuh\bin\Release\
-        wuh.exe show-available
-        wuh.exe show-updated
-        wuh.exe install --download --security-only
+        .\wuh.exe show-available
+        .\wuh.exe show-updated
+        .\wuh.exe install --download --security-only
