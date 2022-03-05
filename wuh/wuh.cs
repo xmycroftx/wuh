@@ -23,12 +23,38 @@ namespace wuh
                     {
                         searchStr = searchStr + "IsHidden=0";
                     }
-                    ISearchResult sResult = uSearcher.Search(searchStr);
-                    Console.WriteLine("Found " + sResult.Updates.Count + " update(s) installed." + Environment.NewLine);
-                    foreach (IUpdate update in sResult.Updates)
+                    string txtAllUpdates = "";
+                    UpdateSession updateSession = new UpdateSession();
+                    IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
+                    int count = updateSearcher.GetTotalHistoryCount();
+                    Console.WriteLine("Total Count = " + count);
+                    IUpdateHistoryEntryCollection history = updateSearcher.QueryHistory(0, count);
+                    string kb2267602 = "";
+                    int afterFilter = 0;
+                    for (int i = count-1; i >= 0; --i)
                     {
-                        Console.WriteLine(update.Title);
+                        if (history[i].HResult == 0) 
+                        {
+                            if (!history[i].Title.Contains("KB2267602"))
+                            {
+                                txtAllUpdates += "\t" + history[i].Title + "\n";
+                                ++afterFilter;
+
+
+                            }
+                            else 
+                            { 
+                                kb2267602 = "\t" + history[i].Title + "\n";
+                                
+                            }
+                            
+                        }
+
                     }
+                    ++afterFilter;
+                    Console.Write(txtAllUpdates);
+                    Console.Write(kb2267602);
+                    Console.WriteLine("After Filter Count = " + afterFilter);
                 }
 
                 if (showavailable == 1) 
@@ -77,7 +103,6 @@ namespace wuh
                     ISearchResult sResult = uSearcher.Search("IsInstalled=0 And IsHidden=0");
                     foreach (IUpdate update in sResult.Updates)
                     {
-                        //Console.Write(update.Title + Environment.NewLine);
                         if (enableall == 1)
                         {
                             updatesToInstall.Add(update);
@@ -160,8 +185,6 @@ namespace wuh
                     
                     return false; 
                 }
-                //return true;
-
             }
         }
     }
@@ -183,9 +206,6 @@ namespace wuh
             Console.WriteLine("------------------------\n");
             if (args.Length > 0)
             {
-                //Console.WriteLine("Arguments Passed by the Programmer:");
-                // To print the command line 
-                // arguments using foreach loop
                 foreach (Object obj in args)
                 {
                     //Console.WriteLine(obj);
@@ -214,8 +234,6 @@ namespace wuh
 
                 }
             }
-            // Display title as the C# console calculator app.
-
             {
                 bool result = true;
                 if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return;}
@@ -223,10 +241,6 @@ namespace wuh
                 return;
 
             }
-
-            //Console.ReadKey();
-            
         }
-            
-        }
+    }
 }
