@@ -38,5 +38,5 @@ jobs:
         type: 'zip'
         filename: 'release.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
-    -name: Test wuh
-     run: dir
+    - name: Test wuh
+      run: dir
