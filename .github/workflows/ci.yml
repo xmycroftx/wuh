@@ -38,8 +38,9 @@ jobs:
         type: 'zip'
         filename: 'release.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
-    - name: Test wuh
-      run: cd wuh/Release/bin
-        wuh show-available
-        wuh install --download --security-only
-        wuh show-updated
+    - name: show-available
+      run: wuh/Release/bin/wuh show-available
+    - name: show-updated
+      run: wuh/Release/bin/wuh show-updated
+    - name: install
+      run: wuh/Release/bin/wuh install --download --security-only
