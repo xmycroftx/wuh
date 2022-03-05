@@ -40,7 +40,7 @@ jobs:
         exclusions: '*.git* /*node_modules/* .editorconfig'
     - name: wuh tests
       run: |
-        cd wuh\Release\bin\
+        cd wuh\bin\Release\
         wuh.exe show-available
         wuh.exe show-updated
         wuh.exe install --download --security-only
