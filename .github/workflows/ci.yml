@@ -40,9 +40,6 @@ jobs:
         exclusions: '*.git* /*node_modules/* .editorconfig'
     - name: wuh tests
       run: |
-        start-service bits
-        sleep 10
-        start-service wuauserv
         cd wuh\bin\Release\
         .\wuh.exe show-available
         .\wuh.exe show-updated
