@@ -21,6 +21,9 @@ Using the show-updated action, we can see the isInstalled list for the user.
 >--download
 Download before trying to run an install, can also be passwed with no actions to download any available Security updates.
 
+>--all 
+Enables downloading and installing of all (non-optional) updates. 
+
 >--enable-hidden
 Really only useful if you're looking for WSUS installed packages that are marked "hidden" with show-updated.
 
