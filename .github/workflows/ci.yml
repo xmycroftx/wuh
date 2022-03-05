@@ -39,4 +39,4 @@ jobs:
         filename: 'release.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
     -name: Test wuh
-     run: D:\a\wuh\wuh\wuh\bin\Release\wuh.exe
+     run: dir
