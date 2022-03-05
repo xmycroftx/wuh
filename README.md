@@ -64,7 +64,7 @@ The following task would check for security updates every day, and installs it a
 > Register-ScheduledTask -Action $action -Trigger $trigger -TaskName "SecurityUpdates" -Description "Daily security updates"
 
 ### Todo:
-> add --enable-all option that enumerates and installs all updates found
+> ~~add --enable-all option that enumerates and installs all updates found~~
 >  
 > add --kb=kbnumber option that allows for selecting only a specific KB for installation
 >  
