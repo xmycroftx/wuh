@@ -236,21 +236,15 @@ namespace wuh
 
             install.Handler = CommandHandler.Create((bool all, bool download, bool enableCumulative, bool enablePreviews, bool securityOnly) =>
             {
-                Console.WriteLine(all);
-                Console.WriteLine(download);
-                Console.WriteLine(enableCumulative);
-                Console.WriteLine(securityOnly);
                 return Updater.installDownloaded(true, download, enablePreviews, enableCumulative, all);
             });
             shAvailable.Handler = CommandHandler.Create((bool all) =>
             {
                 return Updater.showUpdates(false, true, all);
-                //Console.WriteLine(all);
             });
             shUpdated.Handler = CommandHandler.Create((bool all) =>
             {
                 return Updater.showUpdates(true, false, all);
-                //Console.WriteLine(all);
             });
             shPending.Handler = CommandHandler.Create((ParseResult parseResult) =>
             {
