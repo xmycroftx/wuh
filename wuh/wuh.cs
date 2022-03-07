@@ -5,7 +5,7 @@ namespace wuh
 {
     class Updater
     {
-        public static Boolean showUpdates(int showinstalled, int showavailable, int showhidden)
+        public static int showUpdates(int showinstalled, int showavailable, int showhidden)
         {
             UpdateSession uSession = new UpdateSession();
             IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
@@ -15,23 +15,49 @@ namespace wuh
                 if (showinstalled == 1)
                 {
                     string searchStr = "IsInstalled=1 And ";
-                    if ( showhidden == 1 )
+                    if (showhidden == 1)
                     {
                         searchStr = searchStr + "IsHidden=1";
                     }
-                    else 
+                    else
                     {
                         searchStr = searchStr + "IsHidden=0";
                     }
-                    ISearchResult sResult = uSearcher.Search(searchStr);
-                    Console.WriteLine("Found " + sResult.Updates.Count + " update(s) installed." + Environment.NewLine);
-                    foreach (IUpdate update in sResult.Updates)
+                    string txtAllUpdates = "";
+                    UpdateSession updateSession = new UpdateSession();
+                    IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
+                    int count = updateSearcher.GetTotalHistoryCount();
+                    Console.WriteLine("Total Count = " + count);
+                    IUpdateHistoryEntryCollection history = updateSearcher.QueryHistory(0, count);
+                    string kb2267602 = "";
+                    int afterFilter = 0;
+                    for (int i = count - 1; i >= 0; --i)
                     {
-                        Console.WriteLine(update.Title);
+                        if (history[i].HResult == 0)
+                        {
+                            if (!history[i].Title.Contains("KB2267602"))
+                            {
+                                txtAllUpdates += "\t" + history[i].Title + "\n";
+                                ++afterFilter;
+
+
+                            }
+                            else
+                            {
+                                kb2267602 = "\t" + history[i].Title + "\n";
+
+                            }
+
+                        }
+
                     }
+                    ++afterFilter;
+                    Console.Write(txtAllUpdates);
+                    Console.Write(kb2267602);
+                    Console.WriteLine("After Filter Count = " + afterFilter);
                 }
 
-                if (showavailable == 1) 
+                if (showavailable == 1)
                 {
                     string searchStr = "IsInstalled=0 And ";
                     if (showhidden == 1)
@@ -49,20 +75,20 @@ namespace wuh
                         Console.WriteLine(update.Title);
                     }
                 }
-                return true;
+                return 0;
             }
             catch (Exception ex)
             {
                 if (ex.Message.Contains("0x80240024"))
-                    {
+                {
                     Console.WriteLine("No updates found");
-                        return true;
+                    return 0;
                 }
                 else { Console.WriteLine("We got an error!: " + ex.Message); }
-                return false;
+                return 1;
             }
         }
-        public static Boolean installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative, int enableall)
+        public static int installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative, int enableall)
         {
             {
 
@@ -147,18 +173,18 @@ namespace wuh
                             }
                         }
                     }
-                    return true;
+                    return 0;
                 }
                 catch (Exception ex) {
                     //https://docs.microsoft.com/en-us/windows/deployment/update/windows-update-error-reference exception codes
                     if (ex.Message.Contains("0x80240024"))
                     {
                         Console.WriteLine("No updates found");
-                        return true;
+                        return 0;
                     }
                     else { Console.WriteLine("We got an error!: " + ex.Message); }
                     
-                    return false; 
+                    return 1; 
                 }
                 //return true;
 
@@ -200,17 +226,18 @@ namespace wuh
                         {
                             if (args[indexer + 1].ToString().Contains("available"))
                             {
+                                Console.WriteLine("Showing updates available to Download/Install");
                                 showavailable = 1;
                             }
                             if (args[indexer + 1].ToString().Contains("updated"))
                             {
+                                Console.WriteLine("Showing updates successfully installed");
                                 showinstalled = 1;
                             }
                         }
                         catch (Exception ex)
                         {
-                             Console.WriteLine("We got an error!: " + ex.Message);
-
+                            Console.WriteLine("We got an error!: " + ex.Message);
                             return 1;
                         }
                     }
@@ -220,7 +247,7 @@ namespace wuh
                     if (obj.ToString().Contains("--download")) { download = 1; Console.WriteLine("Downloading...\n"); }
                     if (obj.ToString().Contains("--enable-hidden")) { enablehidden = 1;  Console.WriteLine("Revealing Hidden Updates..."); }
                     if (obj.ToString().Contains("--enable-previews")) { enablepreview = 1; Console.WriteLine("Enabled Preview Updates."); }
-                    if (obj.ToString().Contains("--enable-cumulative")) { enablecumulative = 1; }
+                    if (obj.ToString().Contains("--enable-cumulative")) { enablecumulative = 1; Console.WriteLine("Enabled Cumulative Updates."); }
                     if (obj.ToString().Contains("--security-only"))
                     { 
                         enablehidden = 0;
@@ -228,28 +255,14 @@ namespace wuh
                         enablecumulative = 0;
                         break;
                     }
-                   
-                    
-
-                    if ((installDownloaded == 1 | download == 1 ) & (showavailable == 1  | showinstalled ==1)) { Console.WriteLine("Error: cannot have show and install or download directives."); return 0; }
-                    
-
-
+                    if ((installDownloaded == 1 | download == 1 ) & (showavailable == 1  | showinstalled ==1)) { Console.WriteLine("Error: cannot have show and install or download directives."); return 1; }
                 }
             }
-            // Display title as the C# console calculator app.
 
-            {
-                bool result = true;
-                if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return 0;}
-                if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return 0;}
-                return 0;
-
-            }
-
-            //Console.ReadKey();
-            
-        }
-            
-        }
+            int result = 0;
+            if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return 0;}
+            if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return 0;}
+            return 0;  
+        }   
+     }
 }
