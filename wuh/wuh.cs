@@ -1,7 +1,4 @@
-﻿using System;
-using System.CommandLine;
-using System.CommandLine.NamingConventionBinder;
-using System.CommandLine.Parsing;
+using System;
 using System.Threading.Tasks;
 using WUApiLib;
 
