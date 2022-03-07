@@ -169,7 +169,7 @@ namespace wuh
     class Program
     {
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             int showavailable = 0;
             int showinstalled = 0;
@@ -186,15 +186,38 @@ namespace wuh
                 //Console.WriteLine("Arguments Passed by the Programmer:");
                 // To print the command line 
                 // arguments using foreach loop
+                int indexer = 0;
                 foreach (Object obj in args)
                 {
+                    //Perform operations based on line index above indexer.
+                    //Console.WriteLine(args[indexer]);
+                    
                     //Console.WriteLine(obj);
-                    if (obj.ToString().Contains("--all")) { enableall = 1; Console.WriteLine("Downloading and Installing allthethings."); }
-                    if (obj.ToString().Contains("help")){ Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --all\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only \n ex install security updates: wuh install --download --security-only"); }
-                    if (obj.ToString().Contains("--download")) { download = 1; Console.WriteLine("Downloading...\n"); }
                     if (obj.ToString().Contains("install")) { installDownloaded = 1; }
-                    if (obj.ToString().Contains("show-available")){ showavailable = 1; }
-                    if (obj.ToString().Contains("show-updated")){ showinstalled = 1; }
+                    if (obj.ToString().Contains("show")) 
+                    {
+                        try
+                        {
+                            if (args[indexer + 1].ToString().Contains("available"))
+                            {
+                                showavailable = 1;
+                            }
+                            if (args[indexer + 1].ToString().Contains("updated"))
+                            {
+                                showinstalled = 1;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                             Console.WriteLine("We got an error!: " + ex.Message);
+
+                            return 1;
+                        }
+                    }
+                    indexer++;
+                    if (obj.ToString().Contains("help")) { Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --all\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only \n ex install security updates: wuh install --download --security-only"); }
+                    if (obj.ToString().Contains("--all")) { enableall = 1; Console.WriteLine("Downloading and Installing allthethings."); }
+                    if (obj.ToString().Contains("--download")) { download = 1; Console.WriteLine("Downloading...\n"); }
                     if (obj.ToString().Contains("--enable-hidden")) { enablehidden = 1;  Console.WriteLine("Revealing Hidden Updates..."); }
                     if (obj.ToString().Contains("--enable-previews")) { enablepreview = 1; Console.WriteLine("Enabled Preview Updates."); }
                     if (obj.ToString().Contains("--enable-cumulative")) { enablecumulative = 1; }
@@ -208,7 +231,7 @@ namespace wuh
                    
                     
 
-                    if ((installDownloaded == 1 | download == 1 ) & (showavailable == 1  | showinstalled ==1)) { Console.WriteLine("Error: cannot have show and install or download directives."); return; }
+                    if ((installDownloaded == 1 | download == 1 ) & (showavailable == 1  | showinstalled ==1)) { Console.WriteLine("Error: cannot have show and install or download directives."); return 0; }
                     
 
 
@@ -218,9 +241,9 @@ namespace wuh
 
             {
                 bool result = true;
-                if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return;}
-                if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return;}
-                return;
+                if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return 0;}
+                if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return 0;}
+                return 0;
 
             }
 
