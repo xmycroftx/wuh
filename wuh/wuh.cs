@@ -1,10 +1,15 @@
 ﻿using System;
+using System.CommandLine;
+using System.CommandLine.NamingConventionBinder;
+using System.CommandLine.Parsing;
+using System.Threading.Tasks;
 using WUApiLib;
 
 namespace wuh
 {
     class Updater
     {
+
         public static int showUpdates(int showinstalled, int showavailable, int showhidden)
         {
             UpdateSession uSession = new UpdateSession();
@@ -12,10 +17,12 @@ namespace wuh
             uSearcher.Online = true;
             try
             {
-                if (showinstalled == 1)
+                if (showinstalled == true)
                 {
                     string searchStr = "IsInstalled=1 And ";
+
                     if (showhidden == 1)
+
                     {
                         searchStr = searchStr + "IsHidden=1";
                     }
@@ -31,6 +38,7 @@ namespace wuh
                     IUpdateHistoryEntryCollection history = updateSearcher.QueryHistory(0, count);
                     string kb2267602 = "";
                     int afterFilter = 0;
+
                     for (int i = count - 1; i >= 0; --i)
                     {
                         if (history[i].HResult == 0)
@@ -45,8 +53,8 @@ namespace wuh
                             else
                             {
                                 kb2267602 = "\t" + history[i].Title + "\n";
-
                             }
+
 
                         }
 
@@ -57,10 +65,12 @@ namespace wuh
                     Console.WriteLine("After Filter Count = " + afterFilter);
                 }
 
+
                 if (showavailable == 1)
+
                 {
                     string searchStr = "IsInstalled=0 And ";
-                    if (showhidden == 1)
+                    if (showhidden == true)
                     {
                         searchStr = searchStr + "IsHidden=1";
                     }
@@ -82,13 +92,17 @@ namespace wuh
                 if (ex.Message.Contains("0x80240024"))
                 {
                     Console.WriteLine("No updates found");
+
                     return 0;
+
                 }
                 else { Console.WriteLine("We got an error!: " + ex.Message); }
                 return 1;
             }
         }
+
         public static int installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative, int enableall)
+
         {
             {
 
@@ -103,8 +117,7 @@ namespace wuh
                     ISearchResult sResult = uSearcher.Search("IsInstalled=0 And IsHidden=0");
                     foreach (IUpdate update in sResult.Updates)
                     {
-                        //Console.Write(update.Title + Environment.NewLine);
-                        if (enableall == 1)
+                        if (enableall == true)
                         {
                             updatesToInstall.Add(update);
                             continue;
@@ -116,9 +129,9 @@ namespace wuh
                             updatesToInstall.Add(update);
                         }
 
-                        if (enablecumulative == 1)
+                        if (enablecumulative == true)
                         {
-                            if (enablepreview == 1)
+                            if (enablepreview == true)
                             {
                                 if (update.Title.Contains("Cumulative Update"))
                                 {
@@ -137,7 +150,7 @@ namespace wuh
                         }
                     }
 
-                    if (download == 1) 
+                    if (download == true) 
                     { 
                         Console.WriteLine("Downloading " + updatesToInstall.Count + " eligible (security or cumulative) update(s)" + Environment.NewLine);
                         IUpdateDownloader downloader = uSession.CreateUpdateDownloader();
@@ -155,7 +168,7 @@ namespace wuh
                             }
                         }
                     }
-                    if (installDownloaded == 1) 
+                    if (installDownloaded == true) 
                     {
                         Console.WriteLine("Installing pending updates...");
                         IUpdateInstaller installer = uSession.CreateUpdateInstaller();
@@ -186,15 +199,12 @@ namespace wuh
                     
                     return 1; 
                 }
-                //return true;
-
             }
         }
     }
 
     class Program
     {
-
         static int Main(string[] args)
         {
             int showavailable = 0;
@@ -265,4 +275,5 @@ namespace wuh
             return 0;  
         }   
      }
+
 }

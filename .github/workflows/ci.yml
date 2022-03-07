@@ -38,3 +38,8 @@ jobs:
         type: 'zip'
         filename: 'release.zip'
         exclusions: '*.git* /*node_modules/* .editorconfig'
+    - name: wuh tests
+      run: |
+        cd wuh\bin\Release\
+        .\wuh.exe --help
+        .\wuh.exe --version
