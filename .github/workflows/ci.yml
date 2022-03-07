@@ -27,6 +27,9 @@ jobs:
     - name: Build Solution
       run: |
         msbuild.exe WUH.sln /nologo /nr:false /p:DeployOnBuild=true /p:DeployDefaultTarget=WebPublish /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:platform="Any CPU" /p:configuration="Release" /p:PublishUrl="../_build"
+    - name: copy payload
+      run: |
+        copy "./wuh/Wuh Security Updates.xml" ./wuh/bin/Release
     - name: Upload artifact
       uses: actions/upload-artifact@v1.0.0
       with:
