@@ -6,6 +6,9 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{978C97E1-8717-4928-BB37-F8F8E6A7C5BC}</ProjectGuid>
     <OutputType>Exe</OutputType>
+    <PublishSingleFile>true</PublishSingleFile>
+    <SelfContained>true</SelfContained>
+    <PublishReadyToRun>true</PublishReadyToRun>
     <RootNamespace>wuh</RootNamespace>
     <AssemblyName>wuh</AssemblyName>
     <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
@@ -94,7 +97,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-    <None Include="ci.yml" />
     <None Include="packages.config" />
     <None Include="Properties\app.manifest" />
   </ItemGroup>
