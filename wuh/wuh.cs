@@ -9,7 +9,8 @@ namespace wuh
 {
     class Updater
     {
-        public static int showUpdates(bool showinstalled, bool showavailable, bool showhidden)
+
+        public static int showUpdates(int showinstalled, int showavailable, int showhidden)
         {
             UpdateSession uSession = new UpdateSession();
             IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
@@ -19,11 +20,13 @@ namespace wuh
                 if (showinstalled == true)
                 {
                     string searchStr = "IsInstalled=1 And ";
-                    if ( showhidden == true )
+
+                    if (showhidden == 1)
+
                     {
                         searchStr = searchStr + "IsHidden=1";
                     }
-                    else 
+                    else
                     {
                         searchStr = searchStr + "IsHidden=0";
                     }
@@ -35,9 +38,10 @@ namespace wuh
                     IUpdateHistoryEntryCollection history = updateSearcher.QueryHistory(0, count);
                     string kb2267602 = "";
                     int afterFilter = 0;
-                    for (int i = count-1; i >= 0; --i)
+
+                    for (int i = count - 1; i >= 0; --i)
                     {
-                        if (history[i].HResult == 0) 
+                        if (history[i].HResult == 0)
                         {
                             if (!history[i].Title.Contains("KB2267602"))
                             {
@@ -46,12 +50,12 @@ namespace wuh
 
 
                             }
-                            else 
-                            { 
+                            else
+                            {
                                 kb2267602 = "\t" + history[i].Title + "\n";
-                                
                             }
-                            
+
+
                         }
 
                     }
@@ -61,7 +65,9 @@ namespace wuh
                     Console.WriteLine("After Filter Count = " + afterFilter);
                 }
 
-                if (showavailable == true) 
+
+                if (showavailable == 1)
+
                 {
                     string searchStr = "IsInstalled=0 And ";
                     if (showhidden == true)
@@ -84,15 +90,19 @@ namespace wuh
             catch (Exception ex)
             {
                 if (ex.Message.Contains("0x80240024"))
-                    {
+                {
                     Console.WriteLine("No updates found");
-                        return 0;
+
+                    return 0;
+
                 }
                 else { Console.WriteLine("We got an error!: " + ex.Message); }
                 return 1;
             }
         }
-        public static int installDownloaded(bool installDownloaded, bool download, bool enablepreview, bool enablecumulative, bool enableall)
+
+        public static int installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative, int enableall)
+
         {
             {
 
@@ -195,63 +205,75 @@ namespace wuh
 
     class Program
     {
-
-
-            public static async Task<int> Main(params string[] args)
+        static int Main(string[] args)
+        {
+            int showavailable = 0;
+            int showinstalled = 0;
+            int enablehidden = 0;
+            int enablepreview = 0;
+            int enablecumulative = 0;
+            int download = 0;
+            int installDownloaded = 0;
+            int enableall = 0;
+            Console.WriteLine("Windows Update Helper\r");
+            Console.WriteLine("------------------------\n");
+            if (args.Length > 0)
             {
-            var help = new Command("help", description: "Shows help dialog.") { new Option<bool>("--all") };
-            var install = new Command("install", description: "Initiates install of matching updates.")
+                //Console.WriteLine("Arguments Passed by the Programmer:");
+                // To print the command line 
+                // arguments using foreach loop
+                int indexer = 0;
+                foreach (Object obj in args)
                 {
-                    new Option<bool>("--all","Installs (and downloads if enabled) all non-optional updates available."),
-                    new Option<bool>("--download","Downloads prior to installing non-cumulative updates."),
-                    new Option<bool>("--enable-cumulative","includes cumulative updates in the update set."),
-                    new Option<bool>("--enable-previews","includes PREVIEW cumulative updates in the update set."),
-                    new Option<bool>("--security-only","Only updates to Security, Anti-Malware and Defender related keywords."),
-                };
-            var shUpdated = new Command("updated", description: "Shows all successfully installed windows updates."){
-                        new Option<bool>("--all","Shows all updates installed (including ALL Security Intelligence updates)")
-                    };
-            var shAvailable = new Command("available", description: "Shows all available windows updates ready to install.")
+                    //Perform operations based on line index above indexer.
+                    //Console.WriteLine(args[indexer]);
+                    
+                    //Console.WriteLine(obj);
+                    if (obj.ToString().Contains("install")) { installDownloaded = 1; }
+                    if (obj.ToString().Contains("show")) 
                     {
-                        new Option<bool>("--all","Shows all updates available (including hidden, preview etc.)")
-                    };
-            var shPending = new Command("pending", description: "Shows all pending windows updates waiting for reboot/install.");
-            var show = new Command("show", description: "show commands (available,updated,pending)")
-                {
-                    shUpdated,
-                    shAvailable,
-                    shPending
-                };
-            var command = new RootCommand
-            {
-                help,
-                install,
-                show
-            };
+                        try
+                        {
+                            if (args[indexer + 1].ToString().Contains("available"))
+                            {
+                                Console.WriteLine("Showing updates available to Download/Install");
+                                showavailable = 1;
+                            }
+                            if (args[indexer + 1].ToString().Contains("updated"))
+                            {
+                                Console.WriteLine("Showing updates successfully installed");
+                                showinstalled = 1;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine("We got an error!: " + ex.Message);
+                            return 1;
+                        }
+                    }
+                    indexer++;
+                    if (obj.ToString().Contains("help")) { Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --all\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only \n ex install security updates: wuh install --download --security-only"); }
+                    if (obj.ToString().Contains("--all")) { enableall = 1; Console.WriteLine("Downloading and Installing allthethings."); }
+                    if (obj.ToString().Contains("--download")) { download = 1; Console.WriteLine("Downloading...\n"); }
+                    if (obj.ToString().Contains("--enable-hidden")) { enablehidden = 1;  Console.WriteLine("Revealing Hidden Updates..."); }
+                    if (obj.ToString().Contains("--enable-previews")) { enablepreview = 1; Console.WriteLine("Enabled Preview Updates."); }
+                    if (obj.ToString().Contains("--enable-cumulative")) { enablecumulative = 1; Console.WriteLine("Enabled Cumulative Updates."); }
+                    if (obj.ToString().Contains("--security-only"))
+                    { 
+                        enablehidden = 0;
+                        enablepreview = 0;
+                        enablecumulative = 0;
+                        break;
+                    }
+                    if ((installDownloaded == 1 | download == 1 ) & (showavailable == 1  | showinstalled ==1)) { Console.WriteLine("Error: cannot have show and install or download directives."); return 1; }
+                }
+            }
 
-            help.Handler = CommandHandler.Create((bool all) =>
-            {
-                Console.WriteLine(all);
-            });
+            int result = 0;
+            if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return 0;}
+            if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return 0;}
+            return 0;  
+        }   
+     }
 
-            install.Handler = CommandHandler.Create((bool all, bool download, bool enableCumulative, bool enablePreviews, bool securityOnly) =>
-            {
-                return Updater.installDownloaded(true, download, enablePreviews, enableCumulative, all);
-            });
-            shAvailable.Handler = CommandHandler.Create((bool all) =>
-            {
-                return Updater.showUpdates(false, true, all);
-            });
-            shUpdated.Handler = CommandHandler.Create((bool all) =>
-            {
-                return Updater.showUpdates(true, false, all);
-            });
-            shPending.Handler = CommandHandler.Create((ParseResult parseResult) =>
-            {
-                Console.WriteLine("Pending Handler Placeholder, not yet implemented");
-            });
-            
-            return await command.InvokeAsync(args);
-        }
-    }
 }
