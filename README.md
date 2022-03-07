@@ -10,10 +10,10 @@ WUH is a command line utility for installing windows updates, and interacts dire
 > install
 use the install action to install any available Security updates
 
-> show-available
+> show available
 The show-available action lists any updates that are ready to download or install
 
-> show-updated
+> show updated
 Using the show-updated action, we can see the isInstalled list for the user.
 
 > options:
@@ -38,11 +38,11 @@ Disables cumulative and previews and runs security updates only.
 
 Example usage:
 
-> wuh show-available 
+> wuh show available 
 
 The above statement will show a list of any windows updates available to download from the update catalog
 
-> wuh show-updated
+> wuh show updated
  
 This shows a list of the "current" patches on the system, does not show history -- only "isInstalled" items.
 ## Installs/Downloads need to be run in the Administrator context
