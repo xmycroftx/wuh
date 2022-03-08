@@ -119,13 +119,22 @@ namespace wuh
                             updatesToInstall.Add(update);
                             continue;
                         }
-
-                        if (update.Title.Contains("Security")|update.Title.Contains("Defender"))
+                        if (update.Title.Contains("Defender")|update.Title.Contains("Malicious"))
                         {
-                            Console.Write("Security Update:" + update.Title + Environment.NewLine);
+                            Console.Write("Defender/MalSoftTool: " + update.Title + Environment.NewLine);
+                            updatesToInstall.Add(update);
+                        }                        
+                        if (update.Title.Contains("Security"))
+                        {
+                            Console.Write("Security Update: " + update.Title + Environment.NewLine);
                             updatesToInstall.Add(update);
                         }
-
+                        
+                        if (update.Title.Contains("Update for Windows") & !update.Title.Contains("Cumulative"))
+                        {
+                            Console.Write("WinUpdate:" + update.Title + Environment.NewLine);
+                            updatesToInstall.Add(update);
+                        }
                         if (enablecumulative == true)
                         {
                             if (enablepreview == true)
