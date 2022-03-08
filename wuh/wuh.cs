@@ -123,17 +123,20 @@ namespace wuh
                         {
                             Console.Write("Defender/MalSoftTool: " + update.Title + Environment.NewLine);
                             updatesToInstall.Add(update);
+                            continue;
                         }                        
                         if (update.Title.Contains("Security"))
                         {
                             Console.Write("Security Update: " + update.Title + Environment.NewLine);
                             updatesToInstall.Add(update);
+                            continue;
                         }
                         
                         if (update.Title.Contains("Update for Windows") & !update.Title.Contains("Cumulative"))
                         {
                             Console.Write("WinUpdate:" + update.Title + Environment.NewLine);
                             updatesToInstall.Add(update);
+                            continue;
                         }
                         if (enablecumulative == true)
                         {
