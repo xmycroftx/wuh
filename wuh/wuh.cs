@@ -38,19 +38,19 @@ namespace wuh
 
                     for (int i = count - 1; i >= 0; --i)
                     {
-                        if(i!= count - 1)
-                        {
-                            jsonAllUpdates += ",";
-                        }
-                        jsonAllUpdates += "\"" + history[i].UpdateIdentity.UpdateID + "\": {" ;
-                        jsonAllUpdates += "\"" + "Result" + "\": \"" + history[i].HResult.ToString() + "\",";
-                        jsonAllUpdates += "\"" + "Title" + "\": \"" + history[i].Title.ToString() + "\",";
-                        jsonAllUpdates += "\"" + "Date" + "\": \"" + history[i].Date.ToString() + "\"";
-                        jsonAllUpdates += "}";
                         if (history[i].HResult == 0)
                         {
                             if (!history[i].Title.Contains("KB2267602"))
                             {
+                                if (i != count - 1)
+                                {
+                                    jsonAllUpdates += ",";
+                                }
+                                jsonAllUpdates += "\"" + history[i].UpdateIdentity.UpdateID + "\": {";
+                                jsonAllUpdates += "\"" + "Result" + "\": \"" + history[i].HResult.ToString() + "\",";
+                                jsonAllUpdates += "\"" + "Title" + "\": \"" + history[i].Title.ToString() + "\",";
+                                jsonAllUpdates += "\"" + "Date" + "\": \"" + history[i].Date.ToString() + "\"";
+                                jsonAllUpdates += "}";
                                 txtAllUpdates += "\t" + history[i].Title + "\n";
                                 ++afterFilter;
                             }
