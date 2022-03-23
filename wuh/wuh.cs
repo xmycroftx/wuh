@@ -7,7 +7,7 @@ namespace wuh
     class Updater
     {
 
-        public static int showUpdates(bool showinstalled, bool showavailable, bool showhidden)
+        public static int showUpdates(bool showinstalled, bool showavailable, bool showhidden, bool showjson)
         {
             UpdateSession uSession = new UpdateSession();
             IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
@@ -28,10 +28,10 @@ namespace wuh
                         searchStr = searchStr + "IsHidden=0";
                     }
                     string txtAllUpdates = "";
+                    string jsonAllUpdates = "\"windowsUpdates\": { ";
                     UpdateSession updateSession = new UpdateSession();
                     IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
                     int count = updateSearcher.GetTotalHistoryCount();
-                    Console.WriteLine("Total Count = " + count);
                     IUpdateHistoryEntryCollection history = updateSearcher.QueryHistory(0, count);
                     string kb2267602 = "";
                     int afterFilter = 0;
@@ -42,10 +42,17 @@ namespace wuh
                         {
                             if (!history[i].Title.Contains("KB2267602"))
                             {
+                                if (i != count - 1)
+                                {
+                                    jsonAllUpdates += ",";
+                                }
+                                jsonAllUpdates += "\"" + history[i].UpdateIdentity.UpdateID + "\": {";
+                                jsonAllUpdates += "\"" + "Result" + "\": \"" + history[i].HResult.ToString() + "\",";
+                                jsonAllUpdates += "\"" + "Title" + "\": \"" + history[i].Title.ToString() + "\",";
+                                jsonAllUpdates += "\"" + "Date" + "\": \"" + history[i].Date.ToString() + "\"";
+                                jsonAllUpdates += "}";
                                 txtAllUpdates += "\t" + history[i].Title + "\n";
                                 ++afterFilter;
-
-
                             }
                             else
                             {
@@ -56,10 +63,18 @@ namespace wuh
                         }
 
                     }
+                    jsonAllUpdates += '}';
                     ++afterFilter;
-                    Console.Write(txtAllUpdates);
-                    Console.Write(kb2267602);
-                    Console.WriteLine("After Filter Count = " + afterFilter);
+
+                    if (showjson == true) { Console.Write(jsonAllUpdates); }
+                    else
+                    {
+                        Console.WriteLine("Total Count = " + count);
+                        Console.Write(txtAllUpdates);
+                        Console.Write(kb2267602);
+                        Console.WriteLine("After Filter Count = " + afterFilter);
+                    }
+                    
                 }
 
 
@@ -224,8 +239,9 @@ namespace wuh
             bool download = false;
             bool installDownloaded = false;
             bool enableall = false;
-            Console.WriteLine("Windows Update Helper\r");
-            Console.WriteLine("------------------------\n");
+            bool enablejson = false;
+            //Console.WriteLine("Windows Update Helper\r");
+            //Console.WriteLine("------------------------\n");
             if (args.Length > 0)
             {
                 //Console.WriteLine("Arguments Passed by the Programmer:");
@@ -245,12 +261,12 @@ namespace wuh
                         {
                             if (args[indexer + 1].ToString().Contains("available"))
                             {
-                                Console.WriteLine("Showing updates available to Download/Install");
+                                //Console.WriteLine("Showing updates available to Download/Install");
                                 showavailable = true;
                             }
                             if (args[indexer + 1].ToString().Contains("updated"))
                             {
-                                Console.WriteLine("Showing updates successfully installed");
+                                //Console.WriteLine("Showing updates successfully installed");
                                 showinstalled = true;
                             }
                         }
@@ -262,11 +278,12 @@ namespace wuh
                     }
                     indexer++;
                     if (obj.ToString().Contains("help")) { Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --all\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only \n ex install security updates: wuh install --download --security-only"); }
-                    if (obj.ToString().Contains("--all")) { enableall = true; Console.WriteLine("Downloading and Installing allthethings."); }
+                    if (obj.ToString().Contains("--all")) { enableall = true; }
                     if (obj.ToString().Contains("--download")) { download = true; Console.WriteLine("Downloading...\n"); }
                     if (obj.ToString().Contains("--enable-hidden")) { enablehidden = true;  Console.WriteLine("Revealing Hidden Updates..."); }
                     if (obj.ToString().Contains("--enable-previews")) { enablepreview = true; Console.WriteLine("Enabled Preview Updates."); }
                     if (obj.ToString().Contains("--enable-cumulative")) { enablecumulative = true; Console.WriteLine("Enabled Cumulative Updates."); }
+                    if (obj.ToString().Contains("--json")) { enablejson = true; }
                     if (obj.ToString().Contains("--security-only"))
                     {
                         enablehidden = false;
@@ -280,7 +297,7 @@ namespace wuh
 
             int result = 0;
             if (download == true | installDownloaded == true) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, enableall); ;  return 0;}
-            if (showavailable == true | showinstalled == true) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return 0;}
+            if (showavailable == true | showinstalled == true) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden,enablejson); return 0;}
             return 0;  
         }   
      }
