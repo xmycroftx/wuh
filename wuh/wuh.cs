@@ -28,7 +28,7 @@ namespace wuh
                         searchStr = searchStr + "IsHidden=0";
                     }
                     string txtAllUpdates = "";
-                    string jsonAllUpdates = "\"windowsUpdates\": { ";
+                    string jsonAllUpdates = "{\"windowsUpdates\": { ";
                     UpdateSession updateSession = new UpdateSession();
                     IUpdateSearcher updateSearcher = updateSession.CreateUpdateSearcher();
                     int count = updateSearcher.GetTotalHistoryCount();
@@ -63,7 +63,7 @@ namespace wuh
                         }
 
                     }
-                    jsonAllUpdates += '}';
+                    jsonAllUpdates += "}}";
                     ++afterFilter;
 
                     if (showjson == true) { Console.Write(jsonAllUpdates); }
