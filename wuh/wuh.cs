@@ -63,7 +63,7 @@ namespace wuh
                         }
 
                     }
-                    jsonAllUpdates += '}}';
+                    jsonAllUpdates += "}}";
                     ++afterFilter;
 
                     if (showjson == true) { Console.Write(jsonAllUpdates); }
