@@ -76,4 +76,4 @@ The following task would check for security updates every day, and installs it a
 > add --optional-only option that specifically installs optional updates
 >  
 > add --reboot option that will automatically reboot if any applied update has RebootRequired set to true.
-
+.
