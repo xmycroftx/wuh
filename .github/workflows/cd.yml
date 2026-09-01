@@ -26,7 +26,6 @@ jobs:
         -p:RuntimeIdentifier=win-x64
         -p:SelfContained=true
         -p:PublishSingleFile=true
-        -p:PublishReadyToRun=true
         -p:RestorePackages=false
         -p:PublishDir=publish\
     - name: Smoke test the standalone exe (no runtime installed dependency)
