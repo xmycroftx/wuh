@@ -5,7 +5,7 @@ namespace wuh
 {
     class Updater
     {
-        public static Boolean showUpdates(int showinstalled, int showavailable, int showhidden)
+        public static Boolean showUpdates(int showinstalled, int showavailable, int showhidden, string kbFilter = "")
         {
             UpdateSession uSession = new UpdateSession();
             IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
@@ -24,10 +24,34 @@ namespace wuh
                         searchStr = searchStr + "IsHidden=0";
                     }
                     ISearchResult sResult = uSearcher.Search(searchStr);
-                    Console.WriteLine("Found " + sResult.Updates.Count + " update(s) installed." + Environment.NewLine);
-                    foreach (IUpdate update in sResult.Updates)
+                    
+                    if (!string.IsNullOrEmpty(kbFilter))
                     {
-                        Console.WriteLine(update.Title);
+                        bool found = false;
+                        foreach (IUpdate update in sResult.Updates)
+                        {
+                            foreach (string kb in update.KBArticleIDs)
+                            {
+                                if (kb == kbFilter)
+                                {
+                                    Console.WriteLine("KB" + kb + " is INSTALLED: " + update.Title);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found)
+                        {
+                            Console.WriteLine("KB" + kbFilter + " is NOT installed.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Found " + sResult.Updates.Count + " update(s) installed." + Environment.NewLine);
+                        foreach (IUpdate update in sResult.Updates)
+                        {
+                            Console.WriteLine(update.Title);
+                        }
                     }
                 }
 
@@ -43,10 +67,34 @@ namespace wuh
                         searchStr = searchStr + "IsHidden=0";
                     }
                     ISearchResult sResult = uSearcher.Search(searchStr);
-                    Console.WriteLine("Found " + sResult.Updates.Count + " update(s) available." + Environment.NewLine);
-                    foreach (IUpdate update in sResult.Updates)
+                    
+                    if (!string.IsNullOrEmpty(kbFilter))
                     {
-                        Console.WriteLine(update.Title);
+                        bool found = false;
+                        foreach (IUpdate update in sResult.Updates)
+                        {
+                            foreach (string kb in update.KBArticleIDs)
+                            {
+                                if (kb == kbFilter)
+                                {
+                                    Console.WriteLine("KB" + kb + " is AVAILABLE: " + update.Title);
+                                    found = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (!found)
+                        {
+                            Console.WriteLine("KB" + kbFilter + " is not available.");
+                        }
+                    }
+                    else
+                    {
+                        Console.WriteLine("Found " + sResult.Updates.Count + " update(s) available." + Environment.NewLine);
+                        foreach (IUpdate update in sResult.Updates)
+                        {
+                            Console.WriteLine(update.Title);
+                        }
                     }
                 }
                 return true;
@@ -91,7 +139,7 @@ namespace wuh
             }
         }
 */
-        public static Boolean installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative)
+        public static Boolean installDownloaded(int installDownloaded, int download, int enablepreview, int enablecumulative, int optionalOnly, int autoReboot, string kbFilter = "")
         {
             {
 
@@ -107,6 +155,37 @@ namespace wuh
                     foreach (IUpdate update in sResult.Updates)
                     {
                         //Console.Write(update.Title + Environment.NewLine);
+                        bool shouldAdd = false;
+                        
+                        // Check KB filter if specified
+                        if (!string.IsNullOrEmpty(kbFilter))
+                        {
+                            foreach (string kb in update.KBArticleIDs)
+                            {
+                                if (kb == kbFilter)
+                                {
+                                    Console.Write("Found KB" + kb + ": " + update.Title + Environment.NewLine);
+                                    shouldAdd = true;
+                                    break;
+                                }
+                            }
+                            if (shouldAdd)
+                            {
+                                updatesToInstall.Add(update);
+                            }
+                            continue;
+                        }
+                        
+                        // Optional-only mode
+                        if (optionalOnly == 1)
+                        {
+                            if (update.IsOptional)
+                            {
+                                Console.Write("Optional Update: " + update.Title + Environment.NewLine);
+                                updatesToInstall.Add(update);
+                            }
+                            continue;
+                        }
 
                         if (update.Title.Contains("Security"))
                         {
@@ -148,15 +227,30 @@ namespace wuh
                         IUpdateInstaller installer = uSession.CreateUpdateInstaller();
                         installer.Updates = updatesToInstall;
                         IInstallationResult installationRes = installer.Install();
+                        bool rebootRequired = false;
                         for (int i = 0; i < updatesToInstall.Count; i++)
                         {
                             if (installationRes.GetUpdateResult(i).HResult == 0)
                             {
                                 Console.Write("Installed : " + updatesToInstall[i].Title + Environment.NewLine);
+                                if (installationRes.GetUpdateResult(i).RebootRequired)
+                                {
+                                    rebootRequired = true;
+                                }
                             }
                             else
                             {
                                 Console.Write("Failed : " + updatesToInstall[i].Title + Environment.NewLine);
+                            }
+                        }
+                        
+                        if (rebootRequired)
+                        {
+                            Console.WriteLine("\nReboot required for installed updates.");
+                            if (autoReboot == 1)
+                            {
+                                Console.WriteLine("Initiating automatic reboot...");
+                                System.Diagnostics.Process.Start("shutdown", "/r /t 10");
                             }
                         }
                     }
@@ -191,6 +285,9 @@ namespace wuh
             int enablecumulative = 0;
             int download = 0;
             int installDownloaded = 0;
+            int optionalOnly = 0;
+            int autoReboot = 0;
+            string kbFilter = "";
             Console.WriteLine("Windows Update Helper\r");
             Console.WriteLine("------------------------\n");
             if (args.Length > 0)
@@ -201,7 +298,7 @@ namespace wuh
                 foreach (Object obj in args)
                 {
                     //Console.WriteLine(obj);
-                    if (obj.ToString().Contains("help")){ Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only"); }
+                    if (obj.ToString().Contains("help")){ Console.WriteLine("Help Menu:\n usage: wuh.exe [install||show-available||show-updated||help] [options] \n options: \n --download\n --enable-hidden\n --enable-previews\n --enable-cumulative\n --security-only\n --optional-only\n --kb=kbnumber\n --isInstalled=kbnumber\n --reboot"); }
                     if (obj.ToString().Contains("--download")) { download = 1; Console.WriteLine("Downloading...\n"); }
                     if (obj.ToString().Contains("install")) { installDownloaded = 1; }
                     if (obj.ToString().Contains("show-available")){ showavailable = 1; }
@@ -214,7 +311,19 @@ namespace wuh
                         enablehidden = 0;
                         enablepreview = 0;
                         enablecumulative = 0;
-                        break;
+                    }
+                    if (obj.ToString().Contains("--optional-only")) { optionalOnly = 1; Console.WriteLine("Installing optional updates only."); }
+                    if (obj.ToString().Contains("--reboot")) { autoReboot = 1; Console.WriteLine("Auto-reboot enabled."); }
+                    if (obj.ToString().StartsWith("--kb="))
+                    {
+                        kbFilter = obj.ToString().Substring(5);
+                        Console.WriteLine("Filtering for KB" + kbFilter);
+                    }
+                    if (obj.ToString().StartsWith("--isInstalled="))
+                    {
+                        kbFilter = obj.ToString().Substring(14);
+                        showinstalled = 1;
+                        Console.WriteLine("Checking if KB" + kbFilter + " is installed...");
                     }
                     
 
@@ -228,8 +337,8 @@ namespace wuh
 
             {
                 bool result = true;
-                if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview,enablecumulative);  return;}
-                if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable,enablehidden); return;}
+                if (download == 1 | installDownloaded == 1) { result = Updater.installDownloaded(installDownloaded, download, enablepreview, enablecumulative, optionalOnly, autoReboot, kbFilter);  return;}
+                if (showavailable == 1 | showinstalled == 1) { result = Updater.showUpdates(showinstalled, showavailable, enablehidden, kbFilter); return;}
                 return;
 
             }
