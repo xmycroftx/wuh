@@ -1,43 +1,40 @@
+name: CD (release)
 on:
   push:
     tags:
-      - 'v*' # Push events to matching v*
+      - 'v*'
 
 jobs:
-  build:
+  release:
     runs-on: windows-latest
+    permissions:
+      contents: write
     steps:
-    - uses: actions/checkout@v2
-      # Install the .NET Core workload
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v1
+    - uses: actions/checkout@v4
+    - name: Setup .NET 8
+      uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: '3.1'
-    - name: Setup MSBuild.exe
-      uses: microsoft/setup-msbuild@v1
-    - name: Navigate to Workspace
-      run: cd $GITHUB_WORKSPACE
-    - name: Create Build Directory
-      run: mkdir _build
-    - name: Restore Packages
-      run: nuget restore WUH.sln
-    - name: Build Solution
-      run: |
-        msbuild.exe WUH.sln /nologo /nr:false /p:DeployOnBuild=true /p:DeployDefaultTarget=WebPublish /p:WebPublishMethod=FileSystem /p:DeleteExistingFiles=True /p:platform="Any CPU" /p:configuration="Release" /p:PublishUrl="../_build"
-    - name: Upload artifact
-      uses: actions/upload-artifact@v1.0.0
+        dotnet-version: '8.0.x'
+    - name: Setup MSBuild (full framework — needed for COMReference)
+      uses: microsoft/setup-msbuild@v2
+    - name: Restore (win-x64)
+      run: dotnet restore wuh/wuh.csproj -r win-x64
+    - name: Publish (self-contained single-file, via msbuild for COMReference)
+      run: >
+        msbuild wuh/wuh.csproj -t:Publish
+        -p:Configuration=Release
+        -p:RuntimeIdentifier=win-x64
+        -p:SelfContained=true
+        -p:PublishSingleFile=true
+        -p:PublishReadyToRun=true
+        -p:RestorePackages=false
+        -p:PublishDir=publish\
+    - name: Smoke test the standalone exe (no runtime installed dependency)
+      run: .\wuh\publish\wuh.exe --version
+    - name: Zip
+      run: Compress-Archive -Path wuh\publish\* -DestinationPath WUH-win-x64.zip
+    - name: Release
+      uses: softprops/action-gh-release@v2
       with:
-        name: WUHbins
-        path: "./wuh/bin/Release/"
-    - name: Archive Release
-      uses: thedoctor0/zip-release@master
-      with:
-        type: 'zip'
-        filename: 'WUHBins.zip'
-        exclusions: '*.git* /*node_modules/* .editorconfig'
-        path: './wuh/bin/Release/'
-    - name: Upload Release
-      uses: ncipollo/release-action@v1
-      with:
-        artifacts: "WUHBins.zip"
-        token: ${{ secrets.GITHUB_TOKEN }}
+        files: WUH-win-x64.zip
+        generate_release_notes: true
