@@ -14,10 +14,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '8.0.x'
+    - name: Setup MSBuild (full framework — needed for COMReference/ResolveComReference)
+      uses: microsoft/setup-msbuild@v2
     - name: Restore
       run: dotnet restore wuh/wuh.csproj
-    - name: Build (Release)
-      run: dotnet build wuh/wuh.csproj -c Release --no-restore
+    - name: Build (Release, via msbuild.exe so WUApiLib COMReference resolves)
+      run: msbuild wuh/wuh.csproj -p:Configuration=Release -p:RestorePackages=false
     - name: Smoke test (--help / --version, no WU API touched)
       run: |
         $exe = "wuh/bin/Release/net8.0-windows/wuh.exe"
