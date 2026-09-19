@@ -155,7 +155,7 @@ namespace wuh
                                 ["KB"] = KbArticles(availUpdate),
                                 ["IsDownloaded"] = availUpdate.IsDownloaded.ToString(),
                                 ["IsMandatory"] = availUpdate.IsMandatory.ToString(),
-                                ["RebootRequired"] = availUpdate.RebootRequired.ToString()
+                                ["RebootBehavior"] = availUpdate.InstallationBehavior.RebootBehavior.ToString()
                             };
                         }
                         Console.Write(new JsonObject { ["availableUpdates"] = availableUpdates }.ToJsonString());
