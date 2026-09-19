@@ -11,6 +11,7 @@ using System.Diagnostics.Eventing.Reader;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Text.Json.Nodes;
+using System.Diagnostics;
 
 namespace wuh
 {
@@ -138,7 +139,29 @@ namespace wuh
 
                     }
                     var root = new JsonObject { ["windowsUpdates"] = windowsUpdates };
-                    
+
+                    // show-available asks what is NOT yet installed. Emitting the
+                    // QueryHistory payload here is well-formed but answers a different
+                    // question, so route --json through the availability search instead.
+                    if (showavailable == true && showjson == true)
+                    {
+                        ISearchResult availResult = uSearcher.Search(searchStr);
+                        var availableUpdates = new JsonObject();
+                        foreach (IUpdate availUpdate in availResult.Updates)
+                        {
+                            availableUpdates[availUpdate.Identity.UpdateID] = new JsonObject
+                            {
+                                ["Title"] = availUpdate.Title,
+                                ["KB"] = KbArticles(availUpdate),
+                                ["IsDownloaded"] = availUpdate.IsDownloaded.ToString(),
+                                ["IsMandatory"] = availUpdate.IsMandatory.ToString(),
+                                ["RebootRequired"] = availUpdate.RebootRequired.ToString()
+                            };
+                        }
+                        Console.Write(new JsonObject { ["availableUpdates"] = availableUpdates }.ToJsonString());
+                        return 0;
+                    }
+
                     if (showjson == true) { Console.Write(root.ToJsonString()); return 0; }
                     else if (showinstalled == true) { Console.Write(txtAllUpdates); }              
                     Console.WriteLine("Total Update History Count :" + count);
@@ -174,6 +197,169 @@ namespace wuh
 
                 }
                 else { Console.WriteLine("We got an error!: " + ex.Message); }
+                return 1;
+            }
+        }
+
+        /// <summary>Comma-joined KB article IDs for an update ("5129195,890830"), or "" if none.</summary>
+        public static string KbArticles(IUpdate update)
+        {
+            var ids = new System.Collections.Generic.List<string>();
+            try { foreach (string id in update.KBArticleIDs) { ids.Add(id); } } catch { }
+            return string.Join(",", ids);
+        }
+
+        /// <summary>Accepts "KB5129195", "kb5129195" or "5129195" and returns the digits.</summary>
+        public static string NormalizeKb(string kb)
+        {
+            if (kb == null) { return ""; }
+            string t = kb.Trim();
+            if (t.StartsWith("KB", StringComparison.OrdinalIgnoreCase)) { t = t.Substring(2); }
+            return t.Trim();
+        }
+
+        private static bool MatchesKb(IUpdate update, string wantedDigits)
+        {
+            try
+            {
+                foreach (string id in update.KBArticleIDs)
+                {
+                    if (string.Equals(id, wantedDigits, StringComparison.OrdinalIgnoreCase)) { return true; }
+                }
+            }
+            catch { }
+            // Driver and Store updates often carry no KBArticleIDs; fall back to the title.
+            return update.Title != null &&
+                   update.Title.IndexOf("KB" + wantedDigits, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        /// <summary>Install exactly one KB, bypassing the security/cumulative filters.</summary>
+        public static int installKb(string kb, bool download)
+        {
+            string wanted = NormalizeKb(kb);
+            if (wanted.Length == 0) { Console.WriteLine("No KB specified."); return 1; }
+
+            UpdateSession uSession = new UpdateSession();
+            IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
+            uSearcher.Online = true;
+            UpdateCollection selected = new UpdateCollection();
+
+            try
+            {
+                ISearchResult sResult = uSearcher.Search("IsInstalled=0 And IsHidden=0");
+                foreach (IUpdate update in sResult.Updates)
+                {
+                    if (MatchesKb(update, wanted)) { selected.Add(update); }
+                }
+
+                if (selected.Count == 0)
+                {
+                    Console.WriteLine("No available update matches KB" + wanted + ".");
+                    return 2;
+                }
+
+                foreach (IUpdate update in selected) { Console.WriteLine("Targeting: " + update.Title); }
+
+                if (download == true)
+                {
+                    IUpdateDownloader downloader = uSession.CreateUpdateDownloader();
+                    downloader.Updates = selected;
+                    IDownloadResult dRes = downloader.Download();
+                    for (int i = 0; i < selected.Count; i++)
+                    {
+                        Console.WriteLine((dRes.GetUpdateResult(i).HResult == 0 ? "Downloaded : " : "Failed : ") + selected[i].Title);
+                    }
+                }
+
+                IUpdateInstaller installer = uSession.CreateUpdateInstaller();
+                installer.Updates = selected;
+                IInstallationResult iRes = installer.Install();
+                for (int i = 0; i < selected.Count; i++)
+                {
+                    Console.WriteLine((iRes.GetUpdateResult(i).HResult == 0 ? "Installed : " : "Failed : ") + selected[i].Title);
+                }
+                if (iRes.RebootRequired) { Console.WriteLine("A reboot is required to complete installation."); }
+                return iRes.ResultCode == OperationResultCode.orcSucceeded ? 0 : 1;
+            }
+            catch (Exception ex)
+            {
+                if (ex.Message.Contains("0x80240024")) { Console.WriteLine("No updates found"); return 0; }
+                Console.WriteLine("We got an error!: " + ex.Message);
+                return 1;
+            }
+        }
+
+        /// <summary>
+        /// Uninstall one KB. wuapi can only remove updates whose IsUninstallable is true,
+        /// which excludes most cumulative/security packages; those fall back to wusa.exe.
+        /// </summary>
+        public static int uninstallKb(string kb, bool force)
+        {
+            string wanted = NormalizeKb(kb);
+            if (wanted.Length == 0) { Console.WriteLine("No KB specified."); return 1; }
+
+            UpdateSession uSession = new UpdateSession();
+            IUpdateSearcher uSearcher = uSession.CreateUpdateSearcher();
+            uSearcher.Online = false; // installed set is local; no need to hit the network
+            UpdateCollection selected = new UpdateCollection();
+
+            try
+            {
+                ISearchResult sResult = uSearcher.Search("IsInstalled=1");
+                foreach (IUpdate update in sResult.Updates)
+                {
+                    if (MatchesKb(update, wanted)) { selected.Add(update); }
+                }
+
+                if (selected.Count == 0)
+                {
+                    Console.WriteLine("KB" + wanted + " is not present in the installed set.");
+                    return 2;
+                }
+
+                UpdateCollection removable = new UpdateCollection();
+                foreach (IUpdate update in selected)
+                {
+                    Console.WriteLine("Found: " + update.Title + "  (IsUninstallable=" + update.IsUninstallable + ")");
+                    if (update.IsUninstallable) { removable.Add(update); }
+                }
+
+                if (removable.Count > 0)
+                {
+                    IUpdateInstaller installer = uSession.CreateUpdateInstaller();
+                    installer.Updates = removable;
+                    IInstallationResult iRes = installer.Uninstall();
+                    for (int i = 0; i < removable.Count; i++)
+                    {
+                        Console.WriteLine((iRes.GetUpdateResult(i).HResult == 0 ? "Uninstalled : " : "Failed : ") + removable[i].Title);
+                    }
+                    if (iRes.RebootRequired) { Console.WriteLine("A reboot is required to complete removal."); }
+                    return iRes.ResultCode == OperationResultCode.orcSucceeded ? 0 : 1;
+                }
+
+                Console.WriteLine("wuapi reports this update is not uninstallable (it is a servicing-stack/CBS package).");
+                if (!force)
+                {
+                    Console.WriteLine("Re-run with --force to attempt removal via wusa.exe /uninstall /kb:" + wanted + ".");
+                    return 3;
+                }
+
+                Console.WriteLine("Falling back to wusa.exe /uninstall /kb:" + wanted + " ...");
+                ProcessStartInfo psi = new ProcessStartInfo("wusa.exe", "/uninstall /kb:" + wanted + " /quiet /norestart");
+                psi.UseShellExecute = false;
+                using (Process proc = Process.Start(psi))
+                {
+                    proc.WaitForExit();
+                    Console.WriteLine("wusa.exe exited with " + proc.ExitCode);
+                    // 0 = ok, 3010 = ok but reboot required, 2359303 = not applicable
+                    if (proc.ExitCode == 0) { return 0; }
+                    if (proc.ExitCode == 3010) { Console.WriteLine("A reboot is required to complete removal."); return 0; }
+                    return 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("We got an error!: " + ex.Message);
                 return 1;
             }
         }
@@ -380,10 +566,48 @@ namespace wuh
                 ctx.ExitCode = Updater.showUpdates(false, false, true, f.Hidden, f.Json, f.Optional, f.Assigned);
             });
 
+            // Surgical, single-KB targeting. Deliberately bypasses the
+            // security/cumulative heuristics in ShouldInclude: if you named a KB,
+            // you meant that KB.
+            var kbArgument = new Argument<string>("kb", "KB number, e.g. KB5129195 or 5129195.");
+
+            var installKbCommand = new Command("install-kb", "Install one specific KB by number.");
+            installKbCommand.AddArgument(kbArgument);
+            installKbCommand.SetHandler(ctx =>
+            {
+                var f = ReadFlags(ctx);
+                if (StatusChecker.pendingReboot(true, true))
+                {
+                    Console.WriteLine("Machine is Pending Reboots... reboot before installing.\nexiting.");
+                    ctx.ExitCode = -1;
+                    return;
+                }
+                ctx.ExitCode = Updater.installKb(ctx.ParseResult.GetValueForArgument(kbArgument), f.Download);
+            });
+
+            var forceOption = new Option<bool>("--force", "For uninstall-kb: fall back to wusa.exe when wuapi reports the update is not uninstallable.");
+            var uninstallKbCommand = new Command("uninstall-kb", "Uninstall one specific KB by number.");
+            uninstallKbCommand.AddArgument(kbArgument);
+            uninstallKbCommand.AddOption(forceOption);
+            uninstallKbCommand.SetHandler(ctx =>
+            {
+                ctx.ExitCode = Updater.uninstallKb(
+                    ctx.ParseResult.GetValueForArgument(kbArgument),
+                    ctx.ParseResult.GetValueForOption(forceOption));
+            });
+
+            // The README documents `wuh.exe help` as an action. System.CommandLine
+            // only provides --help as an option, so the documented verb 404'd.
+            var helpCommand = new Command("help", "Show help and usage information.");
+            helpCommand.SetHandler(ctx => { ctx.ExitCode = root.Invoke("--help"); });
+
             root.AddCommand(installCommand);
+            root.AddCommand(installKbCommand);
+            root.AddCommand(uninstallKbCommand);
             root.AddCommand(showAvailableCommand);
             root.AddCommand(showUpdatedCommand);
             root.AddCommand(showPendingCommand);
+            root.AddCommand(helpCommand);
 
             // No subcommand: --download downloads available security updates without installing.
             root.SetHandler(ctx =>
